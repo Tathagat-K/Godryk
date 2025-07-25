@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 from src.core.config import settings
 
 # Ensure log directory exists
-log_dir = settings.LOG_DIR if hasattr(settings, 'LOG_DIR') else 'logs'
+log_dir = settings.LOG_DIR or 'logs'
 os.makedirs(log_dir, exist_ok=True)
 
 # Log file path
