@@ -12,7 +12,10 @@ from docx import Document
 from fastapi import HTTPException, UploadFile
 
 from src.core.config import settings
-from src.services.embeddings import embedding_model, sparse_embedding_model
+# Avoid expensive model loading at import time
+def _get_embedding_models():
+    from src.services.embeddings import embedding_model, sparse_embedding_model
+    return embedding_model, sparse_embedding_model
 from src.db.milvus_client import MilvusClient
 
 logger = logging.getLogger("ingestion")
@@ -92,6 +95,7 @@ def ingest_bytes(data: bytes, filename: str, user_id: str) -> None:
     logger.info(f"Embedding {count} chunks from '{filename}'")
 
     # --- 2) Compute embeddings ---
+    embedding_model, sparse_embedding_model = _get_embedding_models()
     dense_vecs = embedding_model.encode(list(texts), show_progress_bar=False).tolist()
     sparse_mat = sparse_embedding_model.encode_documents(list(texts))
 
