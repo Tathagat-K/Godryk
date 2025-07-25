@@ -1,6 +1,6 @@
 # app/core/config.py
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Optional
 
 class Settings(BaseSettings):
     # Milvus configuration
@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     INGEST_CHUNK_SIZE: int
     INGEST_CHUNK_OVERLAP: int
     ALLOWED_FILE_EXTENSIONS: List[str]
+
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_DIR: Optional[str] = "logs"
 
     class Config:
         env_file = ".env"
