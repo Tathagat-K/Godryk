@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "godyrk"
+version = "0.1.0"
+description = ""
+authors = ["Tathagat"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pymilvus = {extras = ["model"], version = "^2.5.14"}
+python-multipart = "^0.0.20"
+pandas = "^2.3.1"
+sentence-transformers = "^5.0.0"
+chardet = "^5.2.0"
+pymupdf = "^1.26.3"
+python-docx = "^1.2.0"
+fastapi = "^0.116.1"
+pydantic = "^2.11.7"
+pydantic-settings = "^2.10.1"
+uvicorn = "^0.35.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
