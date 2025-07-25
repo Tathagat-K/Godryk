@@ -101,7 +101,7 @@ def ingest_bytes(data: bytes, filename: str, user_id: str) -> None:
 
     def _csr_to_milvus(csr, i):
         s, e = csr.indptr[i], csr.indptr[i+1]
-        return {"ids": csr.indices[s:e].tolist(), "values": csr.data[s:e].tolist()}
+        return {int(dim): float(val) for dim, val in zip(csr.indices[s:e], csr.data[s:e])}
 
     sparse_vecs = [_csr_to_milvus(sparse_mat, i) for i in range(count)]
 
@@ -123,7 +123,6 @@ def ingest_bytes(data: bytes, filename: str, user_id: str) -> None:
             dense_vecs,      # dense embeddings
             sparse_vecs,     # sparse TF-IDF embeddings
             list(metas),     # full metadata JSON
-            [0.0] * count    # initial feedback_score
         ],
         partition_name=ext
     )
