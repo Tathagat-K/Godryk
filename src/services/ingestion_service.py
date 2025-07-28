@@ -47,6 +47,7 @@ def _process_tabular(df: pd.DataFrame, source: str) -> List[Tuple[str, Dict]]:
     return chunks
 
 def ingest_bytes(data: bytes, filename: str, user_id: str) -> None:
+    logger.debug("Starting ingestion for %s by %s", filename, user_id)
     ext = filename.rsplit(".", 1)[-1].lower()
     if ext not in ALLOWED_EXT:
         raise HTTPException(415, f"Unsupported file type '{ext}'")
@@ -98,6 +99,7 @@ def ingest_bytes(data: bytes, filename: str, user_id: str) -> None:
     embedding_model, sparse_embedding_model = _get_embedding_models()
     dense_vecs = embedding_model.encode(list(texts), show_progress_bar=False).tolist()
     sparse_mat = sparse_embedding_model.encode_documents(list(texts))
+    logger.debug("Computed dense and sparse embeddings")
 
     def _csr_to_milvus(csr, i):
         s, e = csr.indptr[i], csr.indptr[i+1]
@@ -126,8 +128,10 @@ def ingest_bytes(data: bytes, filename: str, user_id: str) -> None:
         ],
         partition_name=ext
     )
+    logger.debug("Inserted %d records into Milvus", count)
     logger.info(f"✅ Completed ingestion for '{filename}'")
 
 async def ingest_file(upload: UploadFile, user_id: str) -> None:
+    logger.debug("Reading upload %s", upload.filename)
     data = await upload.read()
     ingest_bytes(data, upload.filename, user_id)
