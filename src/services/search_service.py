@@ -14,16 +14,30 @@ logger = logging.getLogger(__name__)
 class SearchService:
     def __init__(self):
         # Connect to Milvus
-        self.client = MilvusClient()
-        self.collection = self.client.get_collection()
-        
+        try:
+            logger.debug("Connecting to Milvus for search service")
+            self.client = MilvusClient()
+            self.collection = self.client.get_collection()
+        except Exception as e:
+            logger.error("Failed to connect to Milvus: %s", e)
+            self.collection = None
+
         # Load embedding models
-        self.dense_encoder = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
+        try:
+            self.dense_encoder = SentenceTransformer(settings.EMBEDDING_MODEL_NAME)
+        except Exception as e:
+            logger.error("Failed to load dense encoder: %s", e)
+            self.dense_encoder = None
+
         self.sparse_encoder = sparse_embedding_model
-        
+
         # Setup reranker
         if settings.ENABLE_RERANKER:
-            self.reranker = SentenceTransformer(settings.RERANKER_MODEL_NAME)
+            try:
+                self.reranker = SentenceTransformer(settings.RERANKER_MODEL_NAME)
+            except Exception as e:
+                logger.error("Failed to load reranker: %s", e)
+                self.reranker = None
         else:
             self.reranker = None
 
@@ -131,6 +145,7 @@ class SearchService:
         Perform hybrid search with proper BM25, dense, and sparse search.
         """
         try:
+            logger.debug("Starting search for '%s'", query)
             all_hits = []
             
             # 1) BM25 Search (if enabled and available)
@@ -160,7 +175,8 @@ class SearchService:
                                 "search_type": "bm25"
                             }
                             all_hits.append(hit_data)
-                            
+                    logger.debug("BM25 search returned %d hits", len(bm25_results[0]))
+
                 except Exception as e:
                     logger.warning(f"BM25 search failed: {e}")
             
@@ -188,7 +204,8 @@ class SearchService:
                             "search_type": "dense"
                         }
                         all_hits.append(hit_data)
-                        
+                    logger.debug("Dense search returned %d hits", len(dense_results[0]))
+
             except Exception as e:
                 logger.warning(f"Dense search failed: {e}")
             
@@ -218,6 +235,7 @@ class SearchService:
                             "search_type": "sparse"
                         }
                         all_hits.append(hit_data)
+                    logger.debug("Sparse search returned %d hits", len(sparse_results[0]))
                         
             except Exception as e:
                 logger.warning(f"Sparse search failed: {e}")
@@ -227,21 +245,24 @@ class SearchService:
             
             # 4) Deduplicate across partitions BEFORE reranking
             unique_hits = self._deduplicate_by_content(all_hits)
+            logger.debug("After deduplication: %d hits", len(unique_hits))
             
             # 5) Combine scores from different search methods
             # Group by content key and combine scores
             final_hits = self._combine_search_scores(unique_hits)
+            logger.debug("After score combination: %d hits", len(final_hits))
             
             # 6) Rerank using clean, relevant text
             if self.reranker and final_hits:
                 final_hits = self._rerank_with_clean_text(query, final_hits)
+                logger.debug("After reranking")
             
             # 7) Final sort and limit
             final_hits.sort(
-                key=lambda x: x.get("rerank_score", x.get("combined_score", x.get("score", 0))), 
+                key=lambda x: x.get("rerank_score", x.get("combined_score", x.get("score", 0))),
                 reverse=True
             )
-            
+            logger.debug("Returning top %d results", top_k)
             return final_hits[:top_k]
             
         except Exception as e:
@@ -322,6 +343,7 @@ class SearchService:
         """
         Debug version that shows what each search method returns.
         """
+        logger.debug("Running debug search for '%s'", query)
         debug_info = {
             "query": query,
             "bm25_results": [],
@@ -356,11 +378,12 @@ class SearchService:
         # Test regular search
         regular_results = self.search(query, top_k)
         debug_info["combined_results"] = regular_results
-        
+
         return debug_info
 
     def health_check(self) -> Dict[str, Any]:
         """Check if all components are working properly."""
+        logger.debug("Running health check")
         status = {
             "milvus_connected": False,
             "dense_encoder_loaded": False,

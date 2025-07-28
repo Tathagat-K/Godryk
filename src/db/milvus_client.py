@@ -17,10 +17,12 @@ class MilvusClient:
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
+                _logger.debug("Initializing Milvus client")
                 cls._instance._connect()
             return cls._instance
 
     def _connect(self):
+        _logger.debug("Connecting to Milvus")
         connections.connect(
             alias="default",
             host=settings.MILVUS_HOST,
@@ -31,6 +33,7 @@ class MilvusClient:
 
     def get_collection(self, name: str | None = None) -> Collection:
         name = name or settings.MILVUS_COLLECTION_NAME
+        _logger.debug("Retrieving collection %s", name)
 
         if not utility.has_collection(name):
             _logger.info(f"🚀 Creating Milvus collection '{name}'")
