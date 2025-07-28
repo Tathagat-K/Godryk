@@ -2,14 +2,16 @@
 
 from fastapi import FastAPI
 from src.api.routes import router
-from src.api.routes.ingest_router import router as ingest_router
 from src.api.routes import router as health_router
+from src.api.routes.ingest_router import router as ingest_router
+from src.api.routes.search_router import router as search_router
 
 app = FastAPI(title="RAG FastAPI")
 
 app.include_router(router)
 app.include_router(ingest_router)
 app.include_router(health_router)
+app.include_router(search_router)
 
 @app.get("/")
 async def read_root():

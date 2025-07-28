@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     SPARSE_EMBEDDING_MODEL_NAME: str
     SPARSE_EMBEDDING_DEVICE: str
     EMBEDDING_DIM: int
+    ENABLE_RERANKER: str
+    RERANKER_MODEL_NAME: str
 
     # Ingestion settings
     INGEST_CHUNK_SIZE: int
